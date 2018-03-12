@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-//import logo from './logo.svg';
 import './App.css';
 
 const list = [
@@ -44,22 +43,40 @@ class App extends Component {
   //binding them explicitly by using JavaScript ES6 arrow functions
   onDismiss(id) {
     const updateList = this.state.list.filter(item => item.objectID !== id);
-    this.setState({list : updateList});
+    this.setState({ list: updateList });
   }
   onSearchChange(event) {
-    this.setState({searchTerm: event.target.value});
+    this.setState({ searchTerm: event.target.value });
   }
 
   render() {
-    //ES6 Object Destructuring
-    const { searchTerm, list } = this.state;
+    const {searchTerm, list} = this.state;
     return (
       <div className="App">
-        <form >
-          <input type="text" name="" id="" onChange={this.onSearchChange} />
-        </form>
-        {this.state.list.filter(isSearched(searchTerm)).map(item => {
-          return (
+        <Search value={searchTerm} onChange={this.onSearchChange} />
+        <Table list={list} pattern={searchTerm} onDismiss={this.onDismiss} />
+      </div>
+    );
+  }
+}
+
+class Search extends Component {
+  render() {
+    const { value, onChange } = this.props;
+    return (
+      <form>
+        <input type="text" value={value} onChange={onChange} />
+      </form>
+    );
+  }
+}
+
+class Table extends Component {
+  render() {
+    const { list, pattern, onDismiss } = this.props;
+    return (
+      <div>
+        {list.filter(isSearched(pattern)).map(item =>
           <div key={item.objectID}>
             <span>
               <a href={item.url}>{item.title}</a>
@@ -68,13 +85,15 @@ class App extends Component {
             <span>{item.num_comments}</span>
             <span>{item.points}</span>
             <span>
-              <button type="button" onClick={() => this.onDismiss(item.objectID)}>
-              Dismiss
+              <button
+                onClick={() => onDismiss(item.objectID)}
+                type="button"
+              >
+                Dismiss
               </button>
             </span>
           </div>
-          );
-        })}
+        )}
       </div>
     );
   }
