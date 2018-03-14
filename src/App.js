@@ -25,6 +25,7 @@ class App extends Component {
       results: null, //empty results initially
       searchKey: '',
       searchTerm: DEFAULT_QUERY, //default search term
+      error: null //let's handle the possible error
     };
     /*Binding: in order to make "this" accessible in your class methods,
     you have to bind the class methods to this */
@@ -63,7 +64,7 @@ class App extends Component {
     fetch(`${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}&${PARAM_HPP}${DEFAULT_HPP}`) //use default search term to fetch data
       .then(response => response.json())
       .then(result => this.setSearchTopStories(result))
-      .catch(error => error);
+      .catch(error => this.setState({ error })); //in case of error it stores the error object in local state
   }
 
   componentDidMount() {
@@ -105,9 +106,10 @@ class App extends Component {
   /* Each time when the state or the props of a component change, the render() method of the
   component is called. */
   render() {
-    const { searchTerm, results, searchKey } = this.state;
+    const { searchTerm, results, searchKey, error } = this.state;
     const page = (results && results[searchKey] && results[searchKey].page) || 0;
     const list = (results && results[searchKey] && results[searchKey].hits) || [];
+
     return (
       <div className="page">
         <div className="iteractions">
@@ -115,7 +117,14 @@ class App extends Component {
             Search
           </Search>
         </div>
-        <Table list={list} onDismiss={this.onDismiss} />
+        {
+        // conditional rendering
+         error
+         ? <div className="interactions">
+           <p>SOMETHING WENT WRONG!</p>
+         </div>
+         : <Table list={list} onDismiss={this.onDismiss} />
+        }
         <div className="interactions">
           <Button onClick={() => this.fetchSearchTopStories(searchKey, page + 1)}>
             More
