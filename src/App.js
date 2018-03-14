@@ -22,11 +22,13 @@ class App extends Component {
     //now the list is part of the component, is internal
     //set the initial state
     this.state = {
-      result: null, //empty result initially
+      results: null, //empty results initially
+      searchKey: '',
       searchTerm: DEFAULT_QUERY, //default search term
     };
     /*Binding: in order to make "this" accessible in your class methods,
     you have to bind the class methods to this */
+    this.needToSearchTopStories = this.needToSearchTopStories.bind(this);
     this.setSearchTopStories = this.setSearchTopStories.bind(this);
     this.fetchSearchTopStories = this.fetchSearchTopStories.bind(this);
     this.onSearchChange = this.onSearchChange.bind(this);
@@ -37,13 +39,22 @@ class App extends Component {
   //ex: onDismiss = (id) => { do something }
   //class methods can be autobound automatically without
   //binding them explicitly by using JavaScript ES6 arrow functions
+  needToSearchTopStories(searchTerm) {
+    return !this.state.results[searchTerm];
+  }
+
   setSearchTopStories(result) {
     const { hits, page } = result; //collect hits and page from result
-    const oldHits = page !== 0 ? this.state.result.hits : []; //check if there are old hits
+    const { searchKey, results } = this.state;
+    const oldHits = results && results[searchKey] ? results[searchKey].hits : []; //check if there are old hits
     const updatedHits = [...oldHits, ...hits]; //merge both lists
     //set the new state
+    // The searchKey will be used as the key to save the updated hits and page in a results map
     this.setState({
-      result: { hits: updatedHits, page}
+      results: {
+        ...results,
+        [searchKey]: { hits: updatedHits, page }
+      }
     });
   }
   //Here it is possible to Fetch data from API
@@ -54,32 +65,49 @@ class App extends Component {
       .then(result => this.setSearchTopStories(result))
       .catch(error => error);
   }
+
   componentDidMount() {
     const { searchTerm } = this.state;
+    //client side cache!
+    //searchKey is set here!!!
+    this.setState({ searchKey: searchTerm });
     this.fetchSearchTopStories(searchTerm);
   }
 
   onDismiss(id) {
+    const { searchKey, results } = this.state;
+    const { hits, page } = results[searchKey];
+
     const isNotId = item => item.objectID !== id;
-    const updatedHits = this.state.result.hits.filter(isNotId);
+    const updatedHits = hits.filter(isNotId);
     this.setState({
-      result: { ...this.state.result, hits: updatedHits }
+      results: {
+        ...results,
+        [searchKey]: { hits: updatedHits, page }
+      }
     });
   }
+
   onSearchChange(event) {
     this.setState({ searchTerm: event.target.value });
   }
+
   onSearchSubmit(event) {
     const { searchTerm } = this.state;
-    this.fetchSearchTopStories(searchTerm);
+    //here searchKey is set again
+    this.setState({ searchKey: searchTerm });
+    if (this.needToSearchTopStories(searchTerm)) {
+      this.fetchSearchTopStories(searchTerm);
+    }
     event.preventDefault();
   }
   //this is a Lifecycle Method in React
   /* Each time when the state or the props of a component change, the render() method of the
   component is called. */
   render() {
-    const { searchTerm, result } = this.state;
-    const page = (result && result.page) || 0;
+    const { searchTerm, results, searchKey } = this.state;
+    const page = (results && results[searchKey] && results[searchKey].page) || 0;
+    const list = (results && results[searchKey] && results[searchKey].hits) || [];
     return (
       <div className="page">
         <div className="iteractions">
@@ -87,10 +115,9 @@ class App extends Component {
             Search
           </Search>
         </div>
-        {/* Conditional Rendering */}
-        { result && <Table list={result.hits} onDismiss={this.onDismiss} /> }
+        <Table list={list} onDismiss={this.onDismiss} />
         <div className="interactions">
-          <Button onClick={() => this.fetchSearchTopStories(searchTerm, page + 1)}>
+          <Button onClick={() => this.fetchSearchTopStories(searchKey, page + 1)}>
             More
           </Button>
         </div>
