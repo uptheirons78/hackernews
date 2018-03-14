@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import axios from 'axios';
 import './App.css';
 
 //API request URL constants using ES6 Template String
@@ -12,6 +13,7 @@ const PARAM_PAGE = 'page=';
 const PARAM_HPP = 'hitsPerPage=';
 
 class App extends Component {
+  _isMounted = false;
   //this is a Lifecycle Method in React
   //is only called when an instance of the component is created and inserted in the DOM.
   //it is called "Mounting of a Component"
@@ -61,18 +63,22 @@ class App extends Component {
   //Here it is possible to Fetch data from API
   //Look  page = 0 is an ES6 default parameter
   fetchSearchTopStories(searchTerm, page = 0) {
-    fetch(`${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}&${PARAM_HPP}${DEFAULT_HPP}`) //use default search term to fetch data
-      .then(response => response.json())
-      .then(result => this.setSearchTopStories(result))
-      .catch(error => this.setState({ error })); //in case of error it stores the error object in local state
+    axios(`${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}&${PARAM_HPP}${DEFAULT_HPP}`) //use default search term to fetch data
+      .then(result => this._isMounted && this.setSearchTopStories(result.data))
+      .catch(error => this._isMounted && this.setState({ error })); //in case of error it stores the error object in local state
   }
 
   componentDidMount() {
+    this._isMounted = true;
     const { searchTerm } = this.state;
     //client side cache!
     //searchKey is set here!!!
     this.setState({ searchKey: searchTerm });
     this.fetchSearchTopStories(searchTerm);
+  }
+
+  componentWillUnmount() {
+    this._isMounted = false;
   }
 
   onDismiss(id) {
@@ -166,7 +172,7 @@ const Table = ({ list, onDismiss }) =>
       {list.map(item =>
         <div key={item.objectID} className="table-row">
           <span style={largeColumn}>
-            <a href={item.url}>{item.title}</a>
+            <a href={item.url} target="_blank">{item.title}</a>
           </span>
         <span style={midColumn}>{item.author}</span>
         <span style={smallColumn}>{item.num_comments}</span>
