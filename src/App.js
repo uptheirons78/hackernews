@@ -1,6 +1,9 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 import './App.css';
+import Loading from './Loading';
+import '@fortawesome/react-fontawesome';
+import '@fortawesome/fontawesome-free-solid';
 
 //API request URL constants using ES6 Template String
 const DEFAULT_QUERY = 'redux';
@@ -27,9 +30,10 @@ class App extends Component {
       results: null, //empty results initially
       searchKey: '',
       searchTerm: DEFAULT_QUERY, //default search term
-      error: null //let's handle the possible error
+      error: null, //let's handle the possible error
+      isLoading: false, //You don’t load anything before the App component is mounted
     };
-    /*Binding: in order to make "this" accessible in your class methods,
+    /* Binding: in order to make "this" accessible in your class methods,
     you have to bind the class methods to this */
     this.needToSearchTopStories = this.needToSearchTopStories.bind(this);
     this.setSearchTopStories = this.setSearchTopStories.bind(this);
@@ -57,12 +61,15 @@ class App extends Component {
       results: {
         ...results,
         [searchKey]: { hits: updatedHits, page }
-      }
+      },
+      isLoading: false
     });
   }
   //Here it is possible to Fetch data from API
   //Look  page = 0 is an ES6 default parameter
   fetchSearchTopStories(searchTerm, page = 0) {
+    this.setState({ isLoading: true });
+
     axios(`${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}&${PARAM_HPP}${DEFAULT_HPP}`) //use default search term to fetch data
       .then(result => this._isMounted && this.setSearchTopStories(result.data))
       .catch(error => this._isMounted && this.setState({ error })); //in case of error it stores the error object in local state
@@ -112,7 +119,7 @@ class App extends Component {
   /* Each time when the state or the props of a component change, the render() method of the
   component is called. */
   render() {
-    const { searchTerm, results, searchKey, error } = this.state;
+    const { searchTerm, results, searchKey, error, isLoading } = this.state;
     const page = (results && results[searchKey] && results[searchKey].page) || 0;
     const list = (results && results[searchKey] && results[searchKey].hits) || [];
 
@@ -131,10 +138,16 @@ class App extends Component {
          </div>
          : <Table list={list} onDismiss={this.onDismiss} />
         }
-        <div className="interactions">
+        <div className="interactions red">
+        {
+          //another conditional rendering
+          isLoading
+          ? <Loading />
+          :
           <Button onClick={() => this.fetchSearchTopStories(searchKey, page + 1)}>
             More
           </Button>
+        }
         </div>
       </div>
     );
@@ -147,12 +160,17 @@ class App extends Component {
 //so ...
 // props as inputs ...JSX as outputs!
 const Search = ({ value, onChange, onSubmit, children }) =>
+    {
+    let input;
+    return (
     <form onSubmit={onSubmit}>
-      <input type="text" value={value} onChange={onChange} />
+      <input type="text" value={value} onChange={onChange} ref={(node => input = node)} />
       <button type="submit">
         {children}
       </button>
     </form>
+    );
+}
 
 //Example to add some inline style
 const largeColumn = {
@@ -166,6 +184,7 @@ const midColumn = {
 const smallColumn = {
   width: '10%'
 };
+
 
 const Table = ({ list, onDismiss }) =>
     <div className="table">
