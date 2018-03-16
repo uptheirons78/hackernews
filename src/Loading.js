@@ -2,7 +2,7 @@ import React from 'react';
 import FontAwesomeIcon from '@fortawesome/react-fontawesome';
 
 const green = {
-    color: 'green',
+    color: '#808080',
     fontSize: '60px'
 }
 
