@@ -147,6 +147,7 @@ class App extends Component {
     return (
       <div className="page">
         <div className="interactions">
+          <Title />
           <Search
             value={searchTerm}
             onChange={this.onSearchChange}
@@ -324,8 +325,10 @@ const Button = ({
     {children}
   </button>
 
-// const Loading = () =>
-//   <div>Loading ...</div>
+const Title = () =>
+  <h1>
+    HackerNews Finder
+  </h1>
 
 const withLoading = (Component) => ({ isLoading, ...rest }) =>
   isLoading
